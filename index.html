@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Solar Residencial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-gray-800">Monitoramento Solar ☀️</h1>
+
+        <!-- Cards de KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-400">
+                <p class="text-sm text-gray-500 uppercase">Produção Total</p>
+                <p id="kpi-prod" class="text-2xl font-bold">0 kWh</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-400">
+                <p class="text-sm text-gray-500 uppercase">Consumo Total</p>
+                <p id="kpi-cons" class="text-2xl font-bold">0 kWh</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-400">
+                <p class="text-sm text-gray-500 uppercase">Exportada</p>
+                <p id="kpi-exp" class="text-2xl font-bold">0 kWh</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-400">
+                <p class="text-sm text-gray-500 uppercase">Autoconsumo</p>
+                <p id="kpi-auto" class="text-2xl font-bold">0%</p>
+            </div>
+        </div>
+
+        <!-- Gráfico Principal -->
+        <div class="bg-white p-6 rounded-lg shadow mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Geração vs Consumo (Hoje)</h2>
+            <canvas id="mainChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            // Fetch KPIs
+            const resKpi = await fetch('http://localhost:18080/api/kpis');
+            const kpis = await resKpi.json();
+            document.getElementById('kpi-prod').innerText = `${kpis.producao_total.toFixed(1)} kWh`;
+            document.getElementById('kpi-cons').innerText = `${kpis.consumo_total.toFixed(1)} kWh`;
+            document.getElementById('kpi-exp').innerText = `${kpis.exportada.toFixed(1)} kWh`;
+            document.getElementById('kpi-auto').innerText = `${kpis.autoconsumo_pct.toFixed(1)}%`;
+
+            // Fetch Séries Temporais para o Gráfico
+            const resSeries = await fetch('http://localhost:18080/api/series');
+            const data = await resSeries.json();
+
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Produção (kWh)',
+                        data: data.producao,
+                        borderColor: '#fbbf24',
+                        backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                        fill: true
+                    }, {
+                        label: 'Consumo (kWh)',
+                        data: data.consumo,
+                        borderColor: '#60a5fa',
+                        fill: false
+                    }]
+                }
+            });
+        }
+        loadDashboard();
+    </script>
+</body>
+
+</html>
